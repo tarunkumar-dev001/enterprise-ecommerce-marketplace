@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7f5ef"/><stop offset="1" stop-color="#e5f0e9"/></linearGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="160%"><feDropShadow dx="0" dy="13" stdDeviation="12" flood-color="#253b35" flood-opacity=".17"/></filter>
+  </defs>
+  <rect width="512" height="512" rx="30" fill="url(#background)"/>
+  <circle cx="256" cy="245" r="183" fill="#fff" opacity=".48"/>
+  <g filter="url(#shadow)" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M201 149q0-57 55-57t55 57l47 17 52 70-39 33-36-32v139H177V237l-36 32-39-33 52-70z" fill="#627b83"/>
+    <path d="M207 144q4-37 49-37t49 37q-12 38-49 43-37-5-49-43z" fill="#425a64"/>
+    <path d="M256 187v183m-13-177-9 58m35-58 9 58" stroke="#c6d8d4" stroke-width="5"/>
+    <path d="M205 286q51-24 102 0v48H205z" fill="#506a72" stroke="#91a7a8" stroke-width="4"/>
+    <path d="M178 367h156" stroke="#405961" stroke-width="8"/></g>
+</svg>

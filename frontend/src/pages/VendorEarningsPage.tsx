@@ -1,0 +1,17 @@
+import { useEffect, useState } from 'react'
+import { vendorApi } from '../api/services'
+import type { VendorLedgerSummaryResponse } from '../types/api'
+import { formatCurrency } from '../lib/currency'
+
+const money = { format: formatCurrency }
+
+export function VendorEarningsPage() {
+  const [ledger, setLedger] = useState<VendorLedgerSummaryResponse | null>(null)
+  const [error, setError] = useState('')
+  useEffect(() => { let active = true; vendorApi.ledger().then((data) => { if (active) setLedger(data) }).catch(() => { if (active) setError('Earnings could not be loaded.') }); return () => { active = false } }, [])
+  return <div className="space-y-8"><header className="border-b border-stone-200 pb-6"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-800">Vendor workspace</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Earnings & payouts</h1><p className="mt-2 text-sm text-stone-600">Ledger totals and payout history for your store.</p></header>
+    {error && <p className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800" role="alert">{error}</p>}{!ledger && !error && <p className="rounded-xl border border-stone-200 bg-white p-6 text-sm text-stone-600" role="status">Loading earnings…</p>}
+    {ledger && <><section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{[['Gross sales', ledger.grossSales], ['Commission', ledger.totalCommission], ['Net earnings', ledger.netEarnings], ['Pending payout', ledger.pendingPayouts], ['Paid out', ledger.paidOut]].map(([label, value]) => <article className="rounded-2xl border border-stone-200 bg-white p-5" key={String(label)}><p className="text-sm text-stone-600">{label}</p><p className="mt-4 text-2xl font-semibold tabular-nums">{money.format(Number(value))}</p></article>)}</section>
+      <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white"><header className="border-b border-stone-100 px-5 py-4"><h2 className="text-lg font-semibold">Payout history</h2><p className="mt-1 text-sm text-stone-500">Payment status is tracked by the marketplace ledger.</p></header>{!ledger.records.length ? <p className="p-8 text-sm text-stone-500">No ledger entries yet. Paid order activity will appear here.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left text-sm"><thead className="bg-stone-50 text-xs uppercase tracking-wide text-stone-500"><tr><th className="px-5 py-3 font-medium">Order</th><th className="px-5 py-3 font-medium">Date</th><th className="px-5 py-3 font-medium">Gross sales</th><th className="px-5 py-3 font-medium">Commission</th><th className="px-5 py-3 font-medium">Net payout</th><th className="px-5 py-3 font-medium">Status</th></tr></thead><tbody className="divide-y divide-stone-100">{ledger.records.map((record) => <tr key={record.id}><td className="px-5 py-4 font-semibold">#{record.orderId}</td><td className="px-5 py-4 text-stone-600">{new Date(record.createdAt).toLocaleDateString()}</td><td className="px-5 py-4">{money.format(record.totalOrderAmount)}</td><td className="px-5 py-4">{money.format(record.platformCommissionFee)}</td><td className="px-5 py-4 font-medium">{money.format(record.netVendorPayout)}</td><td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${record.payoutStatus === 'PAID' ? 'bg-indigo-50 text-indigo-800' : 'bg-amber-50 text-amber-800'}`}>{record.payoutStatus}</span></td></tr>)}</tbody></table></div>}</section></>}
+  </div>
+}

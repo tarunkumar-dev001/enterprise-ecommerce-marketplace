@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #172033;
+  background: #f6f7fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  --color-brand: #4338ca;
+  --color-brand-dark: #312e81;
+  --color-surface: #ffffff;
+  --shadow-card: 0 12px 36px -24px rgb(15 23 42 / 30%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: radial-gradient(ellipse at top, rgb(238 242 255 / 72%), transparent 42rem), #f6f7fb;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.seller-cta-link {
+  color: #1e1b4b;
+  -webkit-text-fill-color: #1e1b4b;
+  background-color: #ffffff;
+  opacity: 1;
+  box-shadow: 0 4px 12px rgb(15 23 42 / 12%);
+  transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.seller-cta-link:hover {
+  color: #1e1b4b;
+  background-color: #eef2ff;
+  box-shadow: 0 8px 18px rgb(15 23 42 / 18%);
+  transform: translateY(-1px);
+}
+
+.seller-cta-link:focus-visible {
+  color: #1e1b4b;
+  outline: 3px solid #c7d2fe;
+  outline-offset: 4px;
+}
+
+.seller-cta-arrow {
+  color: #1e1b4b;
+  transition: transform 180ms ease;
+}
+
+.seller-cta-link:hover .seller-cta-arrow {
+  transform: translateX(3px);
+}
+
+button,
+a,
+input,
+select,
+textarea,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid rgb(99 102 241 / 65%);
+  outline-offset: 3px;
+}
+
+::selection {
+  color: #1e1b4b;
+  background: #c7d2fe;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes vendor-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

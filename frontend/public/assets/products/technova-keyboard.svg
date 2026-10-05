@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7f5ef"/><stop offset="1" stop-color="#e5f0e9"/></linearGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="160%"><feDropShadow dx="0" dy="13" stdDeviation="12" flood-color="#253b35" flood-opacity=".17"/></filter>
+  </defs>
+  <rect width="512" height="512" rx="30" fill="url(#background)"/>
+  <circle cx="256" cy="245" r="183" fill="#fff" opacity=".48"/>
+  <g filter="url(#shadow)" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="92" y="160" width="328" height="204" rx="24" fill="#26343e"/>
+    <g fill="#d5e5df" stroke="#91aaa2" stroke-width="2">
+      <rect x="112" y="181" width="35" height="30" rx="6"/><rect x="155" y="181" width="35" height="30" rx="6"/><rect x="198" y="181" width="35" height="30" rx="6"/><rect x="241" y="181" width="35" height="30" rx="6"/><rect x="284" y="181" width="35" height="30" rx="6"/><rect x="327" y="181" width="35" height="30" rx="6"/><rect x="370" y="181" width="30" height="30" rx="6"/>
+      <rect x="112" y="221" width="43" height="30" rx="6"/><rect x="163" y="221" width="35" height="30" rx="6"/><rect x="206" y="221" width="35" height="30" rx="6"/><rect x="249" y="221" width="35" height="30" rx="6"/><rect x="292" y="221" width="35" height="30" rx="6"/><rect x="335" y="221" width="65" height="30" rx="6"/>
+      <rect x="112" y="261" width="52" height="30" rx="6"/><rect x="172" y="261" width="35" height="30" rx="6"/><rect x="215" y="261" width="35" height="30" rx="6"/><rect x="258" y="261" width="35" height="30" rx="6"/><rect x="301" y="261" width="35" height="30" rx="6"/><rect x="344" y="261" width="56" height="30" rx="6"/>
+      <rect x="112" y="301" width="56" height="30" rx="6"/><rect x="176" y="301" width="170" height="30" rx="6"/><rect x="354" y="301" width="46" height="30" rx="6"/>
+    </g>
+    <path d="M120 350h272" stroke="#c58e78" stroke-width="5" stroke-linecap="round"/></g>
+</svg>
