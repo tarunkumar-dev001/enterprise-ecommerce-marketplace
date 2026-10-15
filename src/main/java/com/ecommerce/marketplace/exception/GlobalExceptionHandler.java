@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ConcurrencyFailureException.class)
     public ResponseEntity<ApiErrorResponse> handleConcurrencyFailure(HttpServletRequest request) {
-        return error(HttpStatus.CONFLICT, "Inventory is being updated; please retry checkout", request);
+        return error(HttpStatus.CONFLICT, "The requested resource changed; please retry", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

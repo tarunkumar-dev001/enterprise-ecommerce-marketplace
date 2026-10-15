@@ -1,6 +1,7 @@
 package com.ecommerce.marketplace.dto;
 
 import com.ecommerce.marketplace.entity.Product;
+import com.ecommerce.marketplace.entity.ProductModerationStatus;
 
 import java.math.BigDecimal;
 
@@ -13,7 +14,9 @@ public record ProductResponse(
         String category,
         String imageUrl,
         Long vendorId,
-        String vendorUsername) {
+        String vendorUsername,
+        ProductModerationStatus moderationStatus,
+        String moderationReason) {
 
     public static ProductResponse from(Product product) {
         return new ProductResponse(
@@ -25,7 +28,9 @@ public record ProductResponse(
                 product.getCategory(),
                 product.getImageUrl(),
                 product.getVendor().getId(),
-                product.getVendor().getUsername());
+                product.getVendor().getUsername(),
+                product.getModerationStatus(),
+                product.getModerationReason());
     }
 }
 

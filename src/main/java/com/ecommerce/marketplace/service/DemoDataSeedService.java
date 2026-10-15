@@ -186,8 +186,14 @@ public class DemoDataSeedService {
                 created.setCategory(seed.category());
                 created.setVendor(vendor);
                 created.setImageUrl("/assets/products/" + seed.imageFile());
+                created.setModerationStatus(ProductModerationStatus.APPROVED);
                 return productRepository.save(created);
             });
+            if (product.getModerationStatus() != ProductModerationStatus.APPROVED) {
+                product.setModerationStatus(ProductModerationStatus.APPROVED);
+                product.setModerationReason(null);
+                product = productRepository.save(product);
+            }
             String expectedImageUrl = "/assets/products/" + seed.imageFile();
             if (!hasUsableImageReference(product.getImageUrl())
                     || isMismatchedDemoAsset(product.getImageUrl(), expectedImageUrl)) {

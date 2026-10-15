@@ -5,10 +5,13 @@ import com.ecommerce.marketplace.dto.WishlistResponse;
 import com.ecommerce.marketplace.dto.CartItemRequest;
 import com.ecommerce.marketplace.dto.CartResponse;
 import com.ecommerce.marketplace.entity.Product;
+import com.ecommerce.marketplace.entity.ProductModerationStatus;
 import com.ecommerce.marketplace.entity.User;
 import com.ecommerce.marketplace.entity.Wishlist;
 import com.ecommerce.marketplace.entity.WishlistItem;
 import com.ecommerce.marketplace.exception.ResourceNotFoundException;
+import com.ecommerce.marketplace.exception.BusinessException;
+import org.springframework.http.HttpStatus;
 import com.ecommerce.marketplace.repository.ProductRepository;
 import com.ecommerce.marketplace.repository.UserRepository;
 import com.ecommerce.marketplace.repository.WishlistItemRepository;
@@ -54,6 +57,9 @@ public class WishlistService {
         User customer = findUser(username);
         Product product = productRepository.findById(request.productId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        if (product.getModerationStatus() != ProductModerationStatus.APPROVED) {
+            throw new BusinessException("Product is not currently available for purchase.", HttpStatus.CONFLICT);
+        }
         Wishlist wishlist = wishlistRepository.findByUser(customer)
                 .orElseGet(() -> createWishlist(customer));
 

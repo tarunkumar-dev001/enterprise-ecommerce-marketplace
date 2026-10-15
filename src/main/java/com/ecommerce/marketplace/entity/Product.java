@@ -2,6 +2,8 @@ package com.ecommerce.marketplace.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -54,6 +56,14 @@ public class Product {
 
     @Column(name = "image_url", length = 2048)
     private String imageUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moderation_status", nullable = false, length = 32,
+            columnDefinition = "varchar(32) not null default 'PENDING_REVIEW'")
+    private ProductModerationStatus moderationStatus = ProductModerationStatus.PENDING_REVIEW;
+
+    @Column(name = "moderation_reason", length = 1000)
+    private String moderationReason;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vendor_id", nullable = false)

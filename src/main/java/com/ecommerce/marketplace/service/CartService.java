@@ -8,6 +8,9 @@ import com.ecommerce.marketplace.entity.Cart;
 import com.ecommerce.marketplace.entity.CartItem;
 import com.ecommerce.marketplace.entity.Coupon;
 import com.ecommerce.marketplace.entity.Product;
+import com.ecommerce.marketplace.entity.ProductModerationStatus;
+import com.ecommerce.marketplace.exception.BusinessException;
+import org.springframework.http.HttpStatus;
 import com.ecommerce.marketplace.entity.User;
 import com.ecommerce.marketplace.exception.InsufficientStockException;
 import com.ecommerce.marketplace.exception.ResourceNotFoundException;
@@ -51,6 +54,8 @@ public class CartService {
 
         Product product = productRepository.findById(request.productId())
             .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        ensureApproved(product);
 
         if (product.getStock() <= 0) {
             throw new InsufficientStockException("Product is out of stock: " + product.getName());
@@ -117,6 +122,7 @@ public class CartService {
             .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
         CartItem item = cartItemRepository.findByCartAndProduct_Id(cart, productId)
             .orElseThrow(() -> new ResourceNotFoundException("Cart item not found"));
+        ensureApproved(item.getProduct());
         if (request.quantity() > item.getProduct().getStock()) {
             throw new InsufficientStockException("Requested quantity exceeds available stock for product: "
                 + item.getProduct().getName());
@@ -172,7 +178,7 @@ public class CartService {
         if (cart.getCoupon() == null) {
             return CartResponse.from(cart);
         }
-        return CartResponse.from(cart, couponService.calculateDiscount(cart.getCoupon(), cart.getItems()));
+        return CartResponse.from(cart, couponService.calculateDiscount(cart.getCoupon(), CartResponse.availableItems(cart)));
     }
 
     private void clearCouponIfNotApplicable(Cart cart) {
@@ -180,6 +186,12 @@ public class CartService {
         if (coupon != null && cart.getItems().stream().noneMatch(item -> coupon.getVendor() == null
                 || coupon.getVendor().getId().equals(item.getProduct().getVendor().getId()))) {
             cart.setCoupon(null);
+        }
+    }
+
+    private void ensureApproved(Product product) {
+        if (product.getModerationStatus() != ProductModerationStatus.APPROVED) {
+            throw new BusinessException("Product is not currently available for purchase.", HttpStatus.CONFLICT);
         }
     }
 }

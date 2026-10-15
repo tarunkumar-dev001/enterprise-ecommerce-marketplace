@@ -9,6 +9,7 @@ import com.ecommerce.marketplace.entity.Order;
 import com.ecommerce.marketplace.entity.OrderItem;
 import com.ecommerce.marketplace.entity.OrderStatus;
 import com.ecommerce.marketplace.entity.Product;
+import com.ecommerce.marketplace.entity.ProductModerationStatus;
 import com.ecommerce.marketplace.entity.SubOrder;
 import com.ecommerce.marketplace.entity.User;
 import com.ecommerce.marketplace.event.OrderPlacedEvent;
@@ -22,6 +23,7 @@ import com.ecommerce.marketplace.repository.ProductRepository;
 import com.ecommerce.marketplace.repository.UserRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -161,6 +163,10 @@ public class OrderService {
         for (Map.Entry<Long, Integer> entry : quantities.entrySet()) {
             Product product = productRepository.findByIdForUpdate(entry.getKey())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + entry.getKey()));
+            if (product.getModerationStatus() != ProductModerationStatus.APPROVED) {
+                throw new com.ecommerce.marketplace.exception.BusinessException(
+                        "Product is not currently available for purchase.", HttpStatus.CONFLICT);
+            }
             int quantity = entry.getValue();
             if (product.getStock() < quantity) {
                 throw new InsufficientStockException("Insufficient stock for product: " + product.getName());

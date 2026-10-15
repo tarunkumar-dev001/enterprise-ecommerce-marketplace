@@ -11,6 +11,10 @@ import { formatCurrency } from '../lib/currency'
 const emptyForm: ProductRequest = { name: '', description: '', price: 0, stock: 0, category: '', imageUrl: '' }
 const currency = { format: formatCurrency }
 
+function moderationLabel(status: VendorProductResponse['moderationStatus']) {
+  return status ? status.replace('_', ' ') : 'Legacy status'
+}
+
 function responseError(error: unknown) {
   if (axios.isAxiosError(error)) {
     const body: unknown = error.response?.data
@@ -83,7 +87,7 @@ export function VendorProductsPage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-700">Vendor workspace</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Product inventory</h1>
-          <p className="mt-2 text-sm text-slate-600">Create listings and keep pricing and stock current.</p>
+          <p className="mt-2 text-sm text-slate-600">Create listings and keep pricing and stock current. New products and edits to approved products require moderation review.</p>
         </div>
         <span className="text-sm tabular-nums text-slate-500">{products?.length ?? 'â€”'} products</span>
       </header>
@@ -142,7 +146,7 @@ export function VendorProductsPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[42rem] text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr><th className="px-5 py-3 font-semibold">Product</th><th className="px-5 py-3 font-semibold">Category</th><th className="px-5 py-3 text-right font-semibold">Price</th><th className="px-5 py-3 text-right font-semibold">Stock</th><th className="px-5 py-3" /></tr>
+                <tr><th className="px-5 py-3 font-semibold">Product</th><th className="px-5 py-3 font-semibold">Category</th><th className="px-5 py-3 text-right font-semibold">Price</th><th className="px-5 py-3 text-right font-semibold">Stock</th><th className="px-5 py-3 font-semibold">Moderation</th><th className="px-5 py-3" /></tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {products.map((product) => (
@@ -156,6 +160,12 @@ export function VendorProductsPage() {
                     <td className="px-5 py-3.5 text-slate-600">{product.category}</td>
                     <td className="px-5 py-3.5 text-right tabular-nums text-slate-800">{currency.format(product.price)}</td>
                     <td className="px-5 py-3.5 text-right tabular-nums text-slate-800">{product.stock}</td>
+                    <td className="px-5 py-3.5">
+                      <div className="space-y-1">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${product.moderationStatus === 'APPROVED' ? 'bg-emerald-50 text-emerald-800' : product.moderationStatus === 'SUSPENDED' ? 'bg-slate-200 text-slate-800' : product.moderationStatus === 'REJECTED' ? 'bg-rose-50 text-rose-800' : 'bg-amber-50 text-amber-800'}`}>{moderationLabel(product.moderationStatus)}</span>
+                        {product.moderationReason && <p className="max-w-xs text-xs text-slate-500">{product.moderationReason}</p>}
+                      </div>
+                    </td>
                     <td className="px-5 py-3.5 text-right">
                       <button aria-label={`Edit ${product.name}`} className="inline-flex items-center gap-1 rounded-sm border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-indigo-700 hover:text-indigo-600" onClick={() => editProduct(product)} type="button">
                         <Pencil aria-hidden="true" size={13} /> Edit

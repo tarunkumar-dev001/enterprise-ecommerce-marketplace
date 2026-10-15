@@ -5,6 +5,7 @@ import com.ecommerce.marketplace.dto.ProductPageResponse;
 import com.ecommerce.marketplace.dto.ProductDetailsResponse;
 import com.ecommerce.marketplace.dto.ProductResponse;
 import com.ecommerce.marketplace.entity.Product;
+import com.ecommerce.marketplace.entity.ProductModerationStatus;
 import com.ecommerce.marketplace.entity.User;
 import com.ecommerce.marketplace.exception.ResourceNotFoundException;
 import com.ecommerce.marketplace.repository.ProductRepository;
@@ -41,6 +42,9 @@ public class ProductService {
     public ProductDetailsResponse getProductDetails(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        if (product.getModerationStatus() != ProductModerationStatus.APPROVED) {
+            throw new ResourceNotFoundException("Product not found");
+        }
         return ProductDetailsResponse.from(product);
     }
 
@@ -55,6 +59,8 @@ public class ProductService {
         product.setCategory(request.category());
         product.setImageUrl(request.imageUrl() == null || request.imageUrl().isBlank() ? null : request.imageUrl().trim());
         product.setVendor(vendor);
+        product.setModerationStatus(ProductModerationStatus.PENDING_REVIEW);
+        product.setModerationReason(null);
 
         return ProductResponse.from(productRepository.save(product));
     }
@@ -74,6 +80,10 @@ public class ProductService {
         product.setStock(request.stock());
         product.setCategory(request.category());
         product.setImageUrl(request.imageUrl() == null || request.imageUrl().isBlank() ? null : request.imageUrl().trim());
+        if (product.getModerationStatus() == ProductModerationStatus.APPROVED) {
+            product.setModerationStatus(ProductModerationStatus.PENDING_REVIEW);
+            product.setModerationReason(null);
+        }
 
         return ProductResponse.from(productRepository.save(product));
     }
@@ -125,6 +135,7 @@ public class ProductService {
 
         Specification<Product> specification = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
+            predicates.add(criteriaBuilder.equal(root.get("moderationStatus"), ProductModerationStatus.APPROVED));
             if (search != null && !search.isBlank()) {
                 String searchPattern = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
                 predicates.add(criteriaBuilder.or(

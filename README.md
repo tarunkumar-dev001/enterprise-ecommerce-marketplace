@@ -114,7 +114,13 @@ The simple demo order lifecycle is `PLACED → PROCESSING → SHIPPED → DELIVE
 
 ## Database design
 
-Core relationships include users to products, carts, wishlists, and orders; orders to order items and vendor suborders; suborders to vendor ledger records; and products to reviews. Order items retain the purchase-time unit price. Hibernate schema update is intended for local/demo convenience; no production migration framework is configured.
+Core relationships include users to products, carts, wishlists, and orders; orders to order items and vendor suborders; suborders to vendor ledger records; and products to reviews. Order items retain the purchase-time unit price. Production uses Flyway and validates the schema rather than allowing Hibernate to update it.
+
+### Production moderation migration rollout
+
+`V1__add_product_moderation.sql` is packaged at `classpath:db/migration` and is run by Flyway in the `prod` profile. It adds the moderation columns, backfills only NULL legacy values to `APPROVED`, and leaves existing non-NULL moderation values unchanged. MySQL DDL commits implicitly, so take and verify a backup first.
+
+For an existing database that has no `flyway_schema_history` table, deploy once with `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true` and `SPRING_FLYWAY_BASELINE_VERSION=0`. This records the pre-Flyway schema as version 0 and then runs V1. Verify the recorded migration and the product-status counts, then remove the baseline environment variable for later deployments. Do not set a baseline version of 1: that would skip the moderation backfill. New production deployments must have their base schema created by the approved schema rollout before Flyway is enabled; Flyway does not recreate or drop application tables.
 
 ## API overview
 

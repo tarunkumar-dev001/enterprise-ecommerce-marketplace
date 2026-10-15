@@ -22,7 +22,11 @@ export type ProductResponse = {
   imageUrl: string | null
   vendorId: number
   vendorUsername: string
+  moderationStatus: ProductModerationStatus | null
+  moderationReason: string | null
 }
+
+export type ProductModerationStatus = 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'
 
 export type ProductDetailsResponse = ProductResponse & {
   averageRating: number
@@ -239,6 +243,9 @@ export type AdminProductResponse = Pick<ProductResponse, 'id' | 'name' | 'catego
   reviewCount: number
   unitsSold: number
   status: string
+  moderationStatus: ProductModerationStatus | null
+  moderationReason: string | null
+  stockStatus: string
 }
 export type AdminVendorResponse = {
   id: number; username: string; email: string; productCount: number; orderCount: number

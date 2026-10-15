@@ -4,6 +4,7 @@ import com.ecommerce.marketplace.dto.ProductReviewRequest;
 import com.ecommerce.marketplace.dto.ProductReviewResponse;
 import com.ecommerce.marketplace.entity.OrderStatus;
 import com.ecommerce.marketplace.entity.Product;
+import com.ecommerce.marketplace.entity.ProductModerationStatus;
 import com.ecommerce.marketplace.entity.ProductReview;
 import com.ecommerce.marketplace.entity.User;
 import com.ecommerce.marketplace.exception.BusinessException;
@@ -46,6 +47,9 @@ public class ProductReviewService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Product product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        if (product.getModerationStatus() != ProductModerationStatus.APPROVED) {
+            throw new ResourceNotFoundException("Product not found");
+        }
 
         if (!orderRepository.hasPurchasedProduct(customer.getId(), productId, OrderStatus.CANCELLED)) {
             throw new BusinessException("You can only review products you have purchased", HttpStatus.FORBIDDEN);
@@ -70,7 +74,9 @@ public class ProductReviewService {
 
     @Transactional(readOnly = true)
     public List<ProductReviewResponse> getProductReviews(Long productId) {
-        if (!productRepository.existsById(productId)) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        if (product.getModerationStatus() != ProductModerationStatus.APPROVED) {
             throw new ResourceNotFoundException("Product not found");
         }
         return productReviewRepository.findByProduct_IdOrderByCreatedAtDescIdDesc(productId).stream()

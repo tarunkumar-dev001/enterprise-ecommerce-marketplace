@@ -101,6 +101,7 @@ public class AdminPortalService {
     private static AdminProductResponse withUnitsSold(Product product, long unitsSold) {
         AdminProductResponse row = AdminProductResponse.from(product);
         return new AdminProductResponse(row.id(), row.name(), row.category(), row.imageUrl(), row.vendorId(), row.vendorUsername(),
-                row.price(), row.stock(), row.averageRating(), row.reviewCount(), unitsSold, row.status());
+                row.price(), row.stock(), row.averageRating(), row.reviewCount(), unitsSold, row.status(),
+                row.moderationStatus(), row.moderationReason(), row.stockStatus());
     }
 }

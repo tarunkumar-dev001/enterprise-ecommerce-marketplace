@@ -1,8 +1,10 @@
 package com.ecommerce.marketplace;
 
 import com.ecommerce.marketplace.entity.Product;
+import com.ecommerce.marketplace.entity.ProductModerationStatus;
 import com.ecommerce.marketplace.entity.User;
 import com.ecommerce.marketplace.repository.ProductRepository;
+import com.ecommerce.marketplace.repository.ProductReviewRepository;
 import com.ecommerce.marketplace.repository.UserRepository;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -14,6 +16,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -46,12 +49,15 @@ import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @SpringBootTest(properties = {
 		"spring.datasource.url=jdbc:h2:mem:marketplace;DB_CLOSE_DELAY=-1",
 		"spring.datasource.driver-class-name=org.h2.Driver",
 		"spring.datasource.username=sa",
 		"spring.datasource.password=",
+		"spring.flyway.enabled=false",
 		"jwt.secret=bG9jYWwtdGVzdC1zaWduaW5nLWtleS1tdXN0LWJlLTMyaGFyYWN0ZXJz",
 		"spring.jpa.hibernate.ddl-auto=create-drop"
 })
@@ -65,6 +71,12 @@ class MarketplaceApplicationTests {
 
 	@Autowired
 	private ProductRepository productRepository;
+
+	@Autowired
+	private ProductReviewRepository productReviewRepository;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -164,6 +176,7 @@ class MarketplaceApplicationTests {
 		product.setStock(10);
 		product.setCategory("Electronics");
 		product.setVendor(vendor);
+		product.setModerationStatus(ProductModerationStatus.APPROVED);
 		productRepository.save(product);
 
 		MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
@@ -213,6 +226,7 @@ class MarketplaceApplicationTests {
 		product.setStock(15);
 		product.setCategory("Electronics");
 		product.setVendor(vendor);
+		product.setModerationStatus(ProductModerationStatus.APPROVED);
 		productRepository.save(product);
 
 		MvcResult customerLogin = mockMvc.perform(post("/api/auth/login")
@@ -278,6 +292,8 @@ class MarketplaceApplicationTests {
 			.andExpect(jsonPath("$.vendorId").value(firstVendor.getId().intValue()))
 			.andReturn();
 		Long productId = ((Number) JsonPath.read(created.getResponse().getContentAsString(), "$.id")).longValue();
+		assertEquals(ProductModerationStatus.PENDING_REVIEW,
+				productRepository.findById(productId).orElseThrow().getModerationStatus());
 
 		mockMvc.perform(get("/api/vendor/products").header("Authorization", "Bearer " + firstVendorToken))
 			.andExpect(status().isOk())
@@ -295,6 +311,21 @@ class MarketplaceApplicationTests {
 			.andExpect(jsonPath("$.name").value("Desk Lamp Pro"))
 			.andExpect(jsonPath("$.price").value(44.50))
 			.andExpect(jsonPath("$.stock").value(6));
+		assertEquals(ProductModerationStatus.PENDING_REVIEW,
+				productRepository.findById(productId).orElseThrow().getModerationStatus());
+
+		Product approvedProduct = productRepository.findById(productId).orElseThrow();
+		approvedProduct.setModerationStatus(ProductModerationStatus.APPROVED);
+		approvedProduct.setModerationReason("Previously approved");
+		productRepository.saveAndFlush(approvedProduct);
+		mockMvc.perform(put("/api/products/{id}", productId)
+				.header("Authorization", "Bearer " + firstVendorToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(productRequest("Desk Lamp Revised", "Revised LED desk lamp", "45.50", 6)))
+			.andExpect(status().isOk());
+		Product resubmittedProduct = productRepository.findById(productId).orElseThrow();
+		assertEquals(ProductModerationStatus.PENDING_REVIEW, resubmittedProduct.getModerationStatus());
+		assertNull(resubmittedProduct.getModerationReason());
 
 		mockMvc.perform(put("/api/products/{id}", productId)
 					.header("Authorization", "Bearer " + secondVendorToken)
@@ -1363,6 +1394,315 @@ class MarketplaceApplicationTests {
 			.andExpect(jsonPath("$.records[0].payoutStatus").value("PAID"));
 	}
 
+	@Test
+	void adminsModerateProductsAndOnlyApprovedProductsAreCustomerAccessible() throws Exception {
+		User admin = saveUser("moderation-admin", "ROLE_ADMIN");
+		User vendor = saveUser("moderation-vendor", "ROLE_VENDOR");
+		User customer = saveUser("moderation-customer", "ROLE_USER");
+		String adminToken = login(admin.getUsername(), "test-password");
+		String vendorToken = login(vendor.getUsername(), "test-password");
+		String customerToken = login(customer.getUsername(), "test-password");
+
+		MvcResult created = mockMvc.perform(post("/api/products")
+				.header("Authorization", "Bearer " + vendorToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(productRequest("Moderated Lamp", "A listing awaiting review", "30.00", 4)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.moderationStatus").value("PENDING_REVIEW"))
+			.andReturn();
+		Long pendingProductId = ((Number) JsonPath.read(created.getResponse().getContentAsString(), "$.id")).longValue();
+
+		mockMvc.perform(get("/api/admin/products").header("Authorization", "Bearer " + adminToken))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[?(@.id == " + pendingProductId + ")].moderationStatus")
+				.value(org.hamcrest.Matchers.contains("PENDING_REVIEW")))
+			.andExpect(jsonPath("$[?(@.id == " + pendingProductId + ")].stockStatus")
+				.value(org.hamcrest.Matchers.contains("ACTIVE")));
+		mockMvc.perform(get("/api/products")
+				.header("Authorization", "Bearer " + customerToken)
+				.param("search", "Moderated Lamp"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content", org.hamcrest.Matchers.hasSize(0)));
+		mockMvc.perform(get("/api/products/{id}", pendingProductId).header("Authorization", "Bearer " + customerToken))
+			.andExpect(status().isNotFound());
+		mockMvc.perform(post("/api/cart/items")
+				.header("Authorization", "Bearer " + customerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(cartItemRequest(pendingProductId, 1)))
+			.andExpect(status().isConflict());
+		mockMvc.perform(patch("/api/admin/products/{id}/approve", pendingProductId)
+				.header("Authorization", "Bearer " + vendorToken))
+			.andExpect(status().isForbidden());
+		mockMvc.perform(patch("/api/admin/products/{id}/approve", pendingProductId)
+				.header("Authorization", "Bearer " + adminToken))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.moderationStatus").value("APPROVED"))
+			.andExpect(jsonPath("$.moderationReason").isEmpty());
+		mockMvc.perform(get("/api/products/{id}", pendingProductId).header("Authorization", "Bearer " + customerToken))
+			.andExpect(status().isOk());
+
+		mockMvc.perform(patch("/api/admin/products/{id}/suspend", pendingProductId)
+				.header("Authorization", "Bearer " + adminToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"reason\":\"   \"}"))
+			.andExpect(status().isBadRequest());
+		mockMvc.perform(patch("/api/admin/products/{id}/suspend", pendingProductId)
+				.header("Authorization", "Bearer " + adminToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"reason\":\"Policy violation\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.moderationStatus").value("SUSPENDED"))
+			.andExpect(jsonPath("$.moderationReason").value("Policy violation"));
+		mockMvc.perform(patch("/api/admin/products/{id}/suspend", pendingProductId)
+				.header("Authorization", "Bearer " + adminToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"reason\":\"Again\"}"))
+			.andExpect(status().isConflict());
+
+		MvcResult rejected = mockMvc.perform(post("/api/products")
+				.header("Authorization", "Bearer " + vendorToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(productRequest("Rejected Lamp", "A second listing awaiting review", "40.00", 3)))
+			.andExpect(status().isOk())
+			.andReturn();
+		Long rejectedProductId = ((Number) JsonPath.read(rejected.getResponse().getContentAsString(), "$.id")).longValue();
+		mockMvc.perform(patch("/api/admin/products/{id}/reject", rejectedProductId)
+				.header("Authorization", "Bearer " + adminToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"reason\":\"\"}"))
+			.andExpect(status().isBadRequest());
+		mockMvc.perform(patch("/api/admin/products/{id}/reject", rejectedProductId)
+				.header("Authorization", "Bearer " + adminToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"reason\":\"Missing compliance information\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.moderationStatus").value("REJECTED"))
+			.andExpect(jsonPath("$.moderationReason").value("Missing compliance information"));
+		mockMvc.perform(get("/api/vendor/products").header("Authorization", "Bearer " + vendorToken))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[?(@.id == " + rejectedProductId + ")].moderationReason")
+				.value(org.hamcrest.Matchers.contains("Missing compliance information")));
+	}
+
+	@Test
+	void checkoutRejectsAProductThatBecomesUnapprovedAfterItIsAddedToCart() throws Exception {
+		User customer = saveUser("moderation-checkout-customer", "ROLE_USER");
+		User vendor = saveUser("moderation-checkout-vendor", "ROLE_VENDOR");
+		Product product = saveProduct("Checkout Moderation Product", new BigDecimal("20.00"), 3, vendor);
+		String customerToken = login(customer.getUsername(), "test-password");
+
+		mockMvc.perform(post("/api/cart/items")
+				.header("Authorization", "Bearer " + customerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(cartItemRequest(product.getId(), 1)))
+			.andExpect(status().isOk());
+		product.setModerationStatus(ProductModerationStatus.SUSPENDED);
+		product.setModerationReason("Removed before checkout");
+		productRepository.saveAndFlush(product);
+
+		mockMvc.perform(post("/api/orders/checkout")
+				.header("Authorization", "Bearer " + customerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"items\":[{\"productId\":" + product.getId() + ",\"quantity\":1}]}"))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.message").value("Product is not currently available for purchase."));
+		assertEquals(3, productRepository.findById(product.getId()).orElseThrow().getStock());
+		mockMvc.perform(get("/api/orders").header("Authorization", "Bearer " + customerToken))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(0)));
+	}
+
+	@Test
+	void moderationActionsRejectCustomerAndUnauthenticatedRequests() throws Exception {
+		User admin = saveUser("moderation-auth-admin", "ROLE_ADMIN");
+		User customer = saveUser("moderation-auth-customer", "ROLE_USER");
+		User vendor = saveUser("moderation-auth-vendor", "ROLE_VENDOR");
+		Product pending = saveProduct("Moderation Auth Pending", new BigDecimal("15.00"), 2, vendor);
+		pending.setModerationStatus(ProductModerationStatus.PENDING_REVIEW);
+		productRepository.saveAndFlush(pending);
+		Product approved = saveProduct("Moderation Auth Approved", new BigDecimal("16.00"), 2, vendor);
+		String adminToken = login(admin.getUsername(), "test-password");
+		String customerToken = login(customer.getUsername(), "test-password");
+
+		for (String endpoint : List.of(
+				"/api/admin/products/" + pending.getId() + "/approve",
+				"/api/admin/products/" + pending.getId() + "/reject",
+				"/api/admin/products/" + approved.getId() + "/suspend")) {
+			mockMvc.perform(patch(endpoint)
+					.header("Authorization", "Bearer " + customerToken)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"reason\":\"Policy violation\"}"))
+				.andExpect(status().isForbidden());
+			mockMvc.perform(patch(endpoint)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"reason\":\"Policy violation\"}"))
+				.andExpect(status().isForbidden());
+		}
+
+		mockMvc.perform(patch("/api/admin/products/{id}/approve", pending.getId())
+				.header("Authorization", "Bearer " + adminToken))
+			.andExpect(status().isOk());
+	}
+
+	@Test
+	void vendorProductRequestsCannotMassAssignModerationFields() throws Exception {
+		User vendor = saveUser("moderation-mass-assignment-vendor", "ROLE_VENDOR");
+		String vendorToken = login(vendor.getUsername(), "test-password");
+		String createRequest = productRequest("Mass Assignment Product", "Vendor supplied fields must be ignored", "22.00", 4)
+				.replace("}", ",\"moderationStatus\":\"APPROVED\",\"moderationReason\":\"attacker supplied\"}");
+		MvcResult created = mockMvc.perform(post("/api/products")
+				.header("Authorization", "Bearer " + vendorToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(createRequest))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.moderationStatus").value("PENDING_REVIEW"))
+			.andReturn();
+		Long productId = ((Number) JsonPath.read(created.getResponse().getContentAsString(), "$.id")).longValue();
+		Product product = productRepository.findById(productId).orElseThrow();
+		assertEquals(ProductModerationStatus.PENDING_REVIEW, product.getModerationStatus());
+		assertNull(product.getModerationReason());
+
+		product.setModerationStatus(ProductModerationStatus.REJECTED);
+		product.setModerationReason("Existing moderator reason");
+		productRepository.saveAndFlush(product);
+		String updateRequest = productRequest("Mass Assignment Updated", "Still cannot set moderation", "23.00", 4)
+				.replace("}", ",\"moderationStatus\":\"APPROVED\",\"moderationReason\":\"replace reason\"}");
+		mockMvc.perform(put("/api/products/{id}", productId)
+				.header("Authorization", "Bearer " + vendorToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(updateRequest))
+			.andExpect(status().isOk());
+		Product afterUpdate = productRepository.findById(productId).orElseThrow();
+		assertEquals(ProductModerationStatus.REJECTED, afterUpdate.getModerationStatus());
+		assertEquals("Existing moderator reason", afterUpdate.getModerationReason());
+	}
+
+	@Test
+	void everyUnapprovedModerationStatusIsHiddenAndCannotBePurchased() throws Exception {
+		User customer = saveUser("moderation-visibility-customer", "ROLE_USER");
+		User vendor = saveUser("moderation-visibility-vendor", "ROLE_VENDOR");
+		String customerToken = login(customer.getUsername(), "test-password");
+		List<Product> unavailableProducts = List.of(
+				productWithStatus("Pending Visibility Product", ProductModerationStatus.PENDING_REVIEW, vendor),
+				productWithStatus("Rejected Visibility Product", ProductModerationStatus.REJECTED, vendor),
+				productWithStatus("Suspended Visibility Product", ProductModerationStatus.SUSPENDED, vendor));
+		Product legacyNullProduct = saveProduct("Legacy Null Visibility Product", new BigDecimal("18.00"), 3, vendor);
+		jdbcTemplate.execute("ALTER TABLE products ALTER COLUMN moderation_status DROP NOT NULL");
+		jdbcTemplate.update("UPDATE products SET moderation_status = NULL WHERE id = ?", legacyNullProduct.getId());
+
+		for (Product product : unavailableProducts) {
+			assertProductIsUnavailableToCustomer(customerToken, product);
+		}
+		assertProductIsUnavailableToCustomer(customerToken, legacyNullProduct);
+
+		Product cartProduct = saveProduct("Suspended Cart Quantity Product", new BigDecimal("19.00"), 3, vendor);
+		mockMvc.perform(post("/api/cart/items")
+				.header("Authorization", "Bearer " + customerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(cartItemRequest(cartProduct.getId(), 1)))
+			.andExpect(status().isOk());
+		cartProduct.setModerationStatus(ProductModerationStatus.SUSPENDED);
+		productRepository.saveAndFlush(cartProduct);
+		mockMvc.perform(put("/api/cart/items/{productId}", cartProduct.getId())
+				.header("Authorization", "Bearer " + customerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"quantity\":2}"))
+			.andExpect(status().isConflict());
+	}
+
+	@Test
+	void moderationTransitionsValidateReasonsAndClearReasonsOnApproval() throws Exception {
+		User admin = saveUser("moderation-transition-admin", "ROLE_ADMIN");
+		User vendor = saveUser("moderation-transition-vendor", "ROLE_VENDOR");
+		String adminToken = login(admin.getUsername(), "test-password");
+		Product product = saveProduct("Moderation Transition Product", new BigDecimal("25.00"), 3, vendor);
+		product.setModerationStatus(ProductModerationStatus.PENDING_REVIEW);
+		productRepository.saveAndFlush(product);
+
+		mockMvc.perform(patch("/api/admin/products/{id}/reject", product.getId()).header("Authorization", "Bearer " + adminToken)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\" \"}"))
+			.andExpect(status().isBadRequest());
+		mockMvc.perform(patch("/api/admin/products/{id}/reject", product.getId()).header("Authorization", "Bearer " + adminToken)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Missing documentation\"}"))
+			.andExpect(status().isOk()).andExpect(jsonPath("$.moderationStatus").value("REJECTED"));
+		mockMvc.perform(patch("/api/admin/products/{id}/approve", product.getId()).header("Authorization", "Bearer " + adminToken))
+			.andExpect(status().isOk()).andExpect(jsonPath("$.moderationStatus").value("APPROVED"))
+			.andExpect(jsonPath("$.moderationReason").isEmpty());
+		mockMvc.perform(patch("/api/admin/products/{id}/reject", product.getId()).header("Authorization", "Bearer " + adminToken)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Not allowed from approved\"}"))
+			.andExpect(status().isConflict());
+		mockMvc.perform(patch("/api/admin/products/{id}/suspend", product.getId()).header("Authorization", "Bearer " + adminToken)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Policy violation\"}"))
+			.andExpect(status().isOk());
+		mockMvc.perform(patch("/api/admin/products/{id}/approve", product.getId()).header("Authorization", "Bearer " + adminToken))
+			.andExpect(status().isConflict());
+		mockMvc.perform(patch("/api/admin/products/{id}/reinstate", product.getId()).header("Authorization", "Bearer " + adminToken)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Corrective action verified\"}"))
+			.andExpect(status().isOk()).andExpect(jsonPath("$.moderationStatus").value("PENDING_REVIEW"))
+			.andExpect(jsonPath("$.moderationReason").value("Corrective action verified"));
+	}
+
+	@Test
+	void cartAndWishlistHideProductsThatBecomeUnavailableButStillAllowRemoval() throws Exception {
+		User customer = saveUser("moderation-saved-items-customer", "ROLE_USER");
+		User vendor = saveUser("moderation-saved-items-vendor", "ROLE_VENDOR");
+		Product cartProduct = saveProduct("Hidden Cart Product", new BigDecimal("29.99"), 4, vendor);
+		Product wishlistProduct = saveProduct("Hidden Wishlist Product", new BigDecimal("39.99"), 5, vendor);
+		String customerToken = login(customer.getUsername(), "test-password");
+
+		mockMvc.perform(post("/api/cart/items").header("Authorization", "Bearer " + customerToken)
+				.contentType(MediaType.APPLICATION_JSON).content(cartItemRequest(cartProduct.getId(), 1)))
+			.andExpect(status().isOk());
+		mockMvc.perform(post("/api/wishlist/items").header("Authorization", "Bearer " + customerToken)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"productId\":" + wishlistProduct.getId() + "}"))
+			.andExpect(status().isOk());
+
+		cartProduct.setModerationStatus(ProductModerationStatus.SUSPENDED);
+		cartProduct.setModerationReason("Policy investigation");
+		wishlistProduct.setModerationStatus(ProductModerationStatus.REJECTED);
+		wishlistProduct.setModerationReason("Listing no longer permitted");
+		productRepository.saveAndFlush(cartProduct);
+		productRepository.saveAndFlush(wishlistProduct);
+
+		mockMvc.perform(get("/api/cart").header("Authorization", "Bearer " + customerToken))
+			.andExpect(status().isOk()).andExpect(jsonPath("$.items", org.hamcrest.Matchers.hasSize(0)))
+			.andExpect(jsonPath("$.subtotal").value(0));
+		mockMvc.perform(get("/api/wishlist").header("Authorization", "Bearer " + customerToken))
+			.andExpect(status().isOk()).andExpect(jsonPath("$.items", org.hamcrest.Matchers.hasSize(0)));
+
+		mockMvc.perform(delete("/api/cart/items/{productId}", cartProduct.getId()).header("Authorization", "Bearer " + customerToken))
+			.andExpect(status().isOk()).andExpect(jsonPath("$.items", org.hamcrest.Matchers.hasSize(0)));
+		mockMvc.perform(delete("/api/wishlist/items/{productId}", wishlistProduct.getId()).header("Authorization", "Bearer " + customerToken))
+			.andExpect(status().isOk()).andExpect(jsonPath("$.items", org.hamcrest.Matchers.hasSize(0)));
+	}
+
+	@Test
+	void suspensionDoesNotBreakHistoricalOrdersPaymentsRestockingOrStoredReviews() throws Exception {
+		User admin = saveUser("moderation-history-admin", "ROLE_ADMIN");
+		User customer = saveUser("moderation-history-customer", "ROLE_USER");
+		User vendor = saveUser("moderation-history-vendor", "ROLE_VENDOR");
+		Product product = saveProduct("Moderation History Product", new BigDecimal("31.00"), 2, vendor);
+		String adminToken = login(admin.getUsername(), "test-password");
+		String customerToken = login(customer.getUsername(), "test-password");
+		Long orderId = placeOrder(customerToken, product.getId());
+
+		mockMvc.perform(post("/api/products/{id}/reviews", product.getId()).header("Authorization", "Bearer " + customerToken)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"rating\":5,\"text\":\"Bought before suspension\"}"))
+			.andExpect(status().isOk());
+		mockMvc.perform(patch("/api/admin/products/{id}/suspend", product.getId()).header("Authorization", "Bearer " + adminToken)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Policy violation\"}"))
+			.andExpect(status().isOk());
+		mockMvc.perform(get("/api/orders/{id}", orderId).header("Authorization", "Bearer " + customerToken))
+			.andExpect(status().isOk()).andExpect(jsonPath("$.id").value(orderId.intValue()));
+		mockMvc.perform(post("/api/orders/{id}/payments", orderId).header("Authorization", "Bearer " + customerToken)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"simulateFailure\":false}"))
+			.andExpect(status().isOk()).andExpect(jsonPath("$.paymentStatus").value("PAID"));
+		mockMvc.perform(post("/api/orders/{id}/cancel", orderId).header("Authorization", "Bearer " + customerToken))
+			.andExpect(status().isOk()).andExpect(jsonPath("$.status").value("CANCELLED"));
+		assertEquals(2, productRepository.findById(product.getId()).orElseThrow().getStock());
+		assertEquals(1, productReviewRepository.countByProduct_Id(product.getId()));
+	}
+
 	private User saveUser(String username, String role) {
 		User user = new User();
 		user.setUsername(username);
@@ -1380,7 +1720,32 @@ class MarketplaceApplicationTests {
 		product.setStock(stock);
 		product.setCategory("Test Category");
 		product.setVendor(vendor);
+		product.setModerationStatus(ProductModerationStatus.APPROVED);
 		return productRepository.save(product);
+	}
+
+	private Product productWithStatus(String name, ProductModerationStatus moderationStatus, User vendor) {
+		Product product = saveProduct(name, new BigDecimal("18.00"), 3, vendor);
+		product.setModerationStatus(moderationStatus);
+		return productRepository.saveAndFlush(product);
+	}
+
+	private void assertProductIsUnavailableToCustomer(String customerToken, Product product) throws Exception {
+		mockMvc.perform(get("/api/products").header("Authorization", "Bearer " + customerToken)
+				.param("search", product.getName()))
+			.andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+		mockMvc.perform(get("/api/products/{id}", product.getId()).header("Authorization", "Bearer " + customerToken))
+			.andExpect(status().isNotFound());
+		mockMvc.perform(get("/api/products/{id}/reviews", product.getId()))
+			.andExpect(status().isNotFound());
+		mockMvc.perform(post("/api/cart/items").header("Authorization", "Bearer " + customerToken)
+				.contentType(MediaType.APPLICATION_JSON).content(cartItemRequest(product.getId(), 1)))
+			.andExpect(status().isConflict());
+		mockMvc.perform(post("/api/orders/checkout").header("Authorization", "Bearer " + customerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"items\":[{\"productId\":" + product.getId() + ",\"quantity\":1}]}"))
+			.andExpect(status().isConflict());
+		assertEquals(3, productRepository.findById(product.getId()).orElseThrow().getStock());
 	}
 
 	private String login(String username, String password) throws Exception {
