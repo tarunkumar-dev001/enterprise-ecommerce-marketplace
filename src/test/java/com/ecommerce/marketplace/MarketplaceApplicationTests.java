@@ -159,7 +159,7 @@ class MarketplaceApplicationTests {
 		customer.setUsername("customer-cart-user");
 		customer.setEmail("customer-cart-user@example.com");
 		customer.setPassword(passwordEncoder.encode("customer-password"));
-		customer.setRoles(Set.of("ROLE_USER"));
+		customer.setRoles(Set.of("ROLE_CUSTOMER"));
 		userRepository.save(customer);
 
 		User vendor = new User();
@@ -209,7 +209,7 @@ class MarketplaceApplicationTests {
 		customer.setUsername("vendor-order-customer");
 		customer.setEmail("vendor-order-customer@example.com");
 		customer.setPassword(passwordEncoder.encode("customer-password"));
-		customer.setRoles(Set.of("ROLE_USER"));
+		customer.setRoles(Set.of("ROLE_CUSTOMER"));
 		userRepository.save(customer);
 
 		User vendor = new User();
@@ -276,7 +276,7 @@ class MarketplaceApplicationTests {
 	void productManagementEnforcesVendorOwnershipAndValidatesRequests() throws Exception {
 		User firstVendor = saveUser("product-flow-vendor-one", "ROLE_VENDOR");
 		saveUser("product-flow-vendor-two", "ROLE_VENDOR");
-		saveUser("product-flow-customer", "ROLE_USER");
+		saveUser("product-flow-customer", "ROLE_CUSTOMER");
 		String firstVendorToken = login("product-flow-vendor-one", "test-password");
 		String secondVendorToken = login("product-flow-vendor-two", "test-password");
 		String customerToken = login("product-flow-customer", "test-password");
@@ -362,7 +362,7 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void customersCanBrowseProductsWithPaginationSortingAndFilters() throws Exception {
-		User customer = saveUser("product-browse-customer", "ROLE_USER");
+		User customer = saveUser("product-browse-customer", "ROLE_CUSTOMER");
 		User firstVendor = saveUser("product-browse-vendor-one", "ROLE_VENDOR");
 		User secondVendor = saveUser("product-browse-vendor-two", "ROLE_VENDOR");
 		String customerToken = login(customer.getUsername(), "test-password");
@@ -451,7 +451,7 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void customerCheckoutCalculatesTotalsUpdatesStockAndClearsCart() throws Exception {
-		User customer = saveUser("checkout-flow-customer", "ROLE_USER");
+		User customer = saveUser("checkout-flow-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("checkout-flow-vendor", "ROLE_VENDOR");
 		Product product = saveProduct("Travel Mug", new BigDecimal("12.50"), 5, vendor);
 		String customerToken = login(customer.getUsername(), "test-password");
@@ -509,7 +509,7 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void checkoutRejectsStaleStockWithoutChangingCartOrInventory() throws Exception {
-		User customer = saveUser("checkout-stock-customer", "ROLE_USER");
+		User customer = saveUser("checkout-stock-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("checkout-stock-vendor", "ROLE_VENDOR");
 		Product product = saveProduct("Portable Charger", new BigDecimal("25.00"), 5, vendor);
 		String customerToken = login(customer.getUsername(), "test-password");
@@ -540,8 +540,8 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void concurrentCheckoutsCannotOversellTheLastUnit() throws Exception {
-		User firstCustomer = saveUser("concurrent-checkout-customer-one", "ROLE_USER");
-		User secondCustomer = saveUser("concurrent-checkout-customer-two", "ROLE_USER");
+		User firstCustomer = saveUser("concurrent-checkout-customer-one", "ROLE_CUSTOMER");
+		User secondCustomer = saveUser("concurrent-checkout-customer-two", "ROLE_CUSTOMER");
 		User vendor = saveUser("concurrent-checkout-vendor", "ROLE_VENDOR");
 		Product product = saveProduct("Last Unit Item", new BigDecimal("30.00"), 1, vendor);
 		String firstToken = login(firstCustomer.getUsername(), "test-password");
@@ -608,8 +608,8 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void customerCanSimulatePaymentFailureRetryAndSuccess() throws Exception {
-		User customer = saveUser("payment-flow-customer", "ROLE_USER");
-		User otherCustomer = saveUser("payment-flow-other-customer", "ROLE_USER");
+		User customer = saveUser("payment-flow-customer", "ROLE_CUSTOMER");
+		User otherCustomer = saveUser("payment-flow-other-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("payment-flow-vendor", "ROLE_VENDOR");
 		Product product = saveProduct("Payment Test Item", new BigDecimal("42.50"), 5, vendor);
 		String customerToken = login(customer.getUsername(), "test-password");
@@ -674,8 +674,8 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void vendorAndAdminCouponsApplyDiscountsToCheckout() throws Exception {
-		User customer = saveUser("coupon-flow-customer", "ROLE_USER");
-		User secondCustomer = saveUser("coupon-flow-second-customer", "ROLE_USER");
+		User customer = saveUser("coupon-flow-customer", "ROLE_CUSTOMER");
+		User secondCustomer = saveUser("coupon-flow-second-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("coupon-flow-vendor", "ROLE_VENDOR");
 		User otherVendor = saveUser("coupon-flow-other-vendor", "ROLE_VENDOR");
 		User admin = saveUser("coupon-flow-admin", "ROLE_ADMIN");
@@ -773,8 +773,8 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void onlyOwnerCanDownloadInvoiceForPaidOrder() throws Exception {
-		User customer = saveUser("invoice-flow-customer", "ROLE_USER");
-		User otherCustomer = saveUser("invoice-flow-other-customer", "ROLE_USER");
+		User customer = saveUser("invoice-flow-customer", "ROLE_CUSTOMER");
+		User otherCustomer = saveUser("invoice-flow-other-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("invoice-flow-vendor", "ROLE_VENDOR");
 		Product product = saveProduct("Invoice Test Product", new BigDecimal("65.25"), 5, vendor);
 		String customerToken = login(customer.getUsername(), "test-password");
@@ -825,8 +825,8 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void customersCanManagePrivateWishlistsWithoutDuplicateFavorites() throws Exception {
-		User customer = saveUser("wishlist-flow-customer", "ROLE_USER");
-		User otherCustomer = saveUser("wishlist-flow-other-customer", "ROLE_USER");
+		User customer = saveUser("wishlist-flow-customer", "ROLE_CUSTOMER");
+		User otherCustomer = saveUser("wishlist-flow-other-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("wishlist-flow-vendor", "ROLE_VENDOR");
 		Product product = saveProduct("Wishlist Product", new BigDecimal("37.50"), 4, vendor);
 		String customerToken = login(customer.getUsername(), "test-password");
@@ -878,8 +878,8 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void customersCanAtomicallyMoveWishlistItemsIntoCart() throws Exception {
-		User customer = saveUser("wishlist-move-customer", "ROLE_USER");
-		User otherCustomer = saveUser("wishlist-move-other-customer", "ROLE_USER");
+		User customer = saveUser("wishlist-move-customer", "ROLE_CUSTOMER");
+		User otherCustomer = saveUser("wishlist-move-other-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("wishlist-move-vendor", "ROLE_VENDOR");
 		Product availableProduct = saveProduct("Available Wishlist Item", new BigDecimal("24.00"), 5, vendor);
 		Product unavailableProduct = saveProduct("Unavailable Wishlist Item", new BigDecimal("49.00"), 1, vendor);
@@ -935,9 +935,9 @@ class MarketplaceApplicationTests {
 	void vendorAnalyticsAggregatePaidSalesAndRankProducts() throws Exception {
 		User vendor = saveUser("analytics-flow-vendor", "ROLE_VENDOR");
 		User otherVendor = saveUser("analytics-flow-other-vendor", "ROLE_VENDOR");
-		User firstCustomer = saveUser("analytics-flow-customer-one", "ROLE_USER");
-		User secondCustomer = saveUser("analytics-flow-customer-two", "ROLE_USER");
-		User unpaidCustomer = saveUser("analytics-flow-unpaid-customer", "ROLE_USER");
+		User firstCustomer = saveUser("analytics-flow-customer-one", "ROLE_CUSTOMER");
+		User secondCustomer = saveUser("analytics-flow-customer-two", "ROLE_CUSTOMER");
+		User unpaidCustomer = saveUser("analytics-flow-unpaid-customer", "ROLE_CUSTOMER");
 		Product bestSeller = saveProduct("Analytics Best Seller", new BigDecimal("10.00"), 20, vendor);
 		Product secondBestSeller = saveProduct("Analytics Second Seller", new BigDecimal("5.00"), 20, vendor);
 		Product otherVendorProduct = saveProduct("Other Vendor Analytics Product", new BigDecimal("100.00"), 20, otherVendor);
@@ -983,7 +983,7 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void customersCanUpdateAndRemoveCartItemsWithStockValidation() throws Exception {
-		User customer = saveUser("cart-edit-customer", "ROLE_USER");
+		User customer = saveUser("cart-edit-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("cart-edit-vendor", "ROLE_VENDOR");
 		Product product = saveProduct("Cart Editable Item", new BigDecimal("14.25"), 3, vendor);
 		String customerToken = login(customer.getUsername(), "test-password");
@@ -1022,7 +1022,7 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void committedOrderAndFulfillmentChangesSendCustomerEmails() throws Exception {
-		User customer = saveUser("email-flow-customer", "ROLE_USER");
+		User customer = saveUser("email-flow-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("email-flow-vendor", "ROLE_VENDOR");
 		Product product = saveProduct("Email Test Product", new BigDecimal("52.75"), 5, vendor);
 		String customerToken = login(customer.getUsername(), "test-password");
@@ -1061,7 +1061,7 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void vendorOrderManagementFiltersByOwnershipAndRejectsUnauthorizedUpdates() throws Exception {
-		User customer = saveUser("vendor-order-flow-customer", "ROLE_USER");
+		User customer = saveUser("vendor-order-flow-customer", "ROLE_CUSTOMER");
 		User firstVendor = saveUser("vendor-order-flow-one", "ROLE_VENDOR");
 		User secondVendor = saveUser("vendor-order-flow-two", "ROLE_VENDOR");
 		Product firstProduct = saveProduct("Vendor One Item", new BigDecimal("18.00"), 10, firstVendor);
@@ -1116,8 +1116,8 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void customerOrderHistoryAndDetailsShowCompleteItemsAndCurrentStatus() throws Exception {
-		User customer = saveUser("order-tracking-customer", "ROLE_USER");
-		User otherCustomer = saveUser("order-tracking-other-customer", "ROLE_USER");
+		User customer = saveUser("order-tracking-customer", "ROLE_CUSTOMER");
+		User otherCustomer = saveUser("order-tracking-other-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("order-tracking-vendor", "ROLE_VENDOR");
 		Product product = saveProduct("Bluetooth Speaker", new BigDecimal("79.95"), 8, vendor);
 		String customerToken = login(customer.getUsername(), "test-password");
@@ -1222,7 +1222,7 @@ class MarketplaceApplicationTests {
 	void adminPortalApisAreRestrictedToAdmins() throws Exception {
 		User admin = saveUser("portal-test-admin", "ROLE_ADMIN");
 		User vendor = saveUser("portal-test-vendor", "ROLE_VENDOR");
-		User customer = saveUser("portal-test-customer", "ROLE_USER");
+		User customer = saveUser("portal-test-customer", "ROLE_CUSTOMER");
 		String adminToken = login(admin.getUsername(), "test-password");
 		String vendorToken = login(vendor.getUsername(), "test-password");
 		String customerToken = login(customer.getUsername(), "test-password");
@@ -1249,8 +1249,8 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void purchasedCustomersCanReviewProductsAndProductDetailsShowAggregates() throws Exception {
-		User customer = saveUser("review-flow-customer", "ROLE_USER");
-		User secondCustomer = saveUser("review-flow-customer-two", "ROLE_USER");
+		User customer = saveUser("review-flow-customer", "ROLE_CUSTOMER");
+		User secondCustomer = saveUser("review-flow-customer-two", "ROLE_CUSTOMER");
 		User vendor = saveUser("review-flow-vendor", "ROLE_VENDOR");
 		User admin = saveUser("review-flow-admin", "ROLE_ADMIN");
 		Product product = saveProduct("Reviewable Headphones", new BigDecimal("129.00"), 10, vendor);
@@ -1323,7 +1323,7 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void checkoutSnapshotsShippingAndCancellationRestoresStockWithoutPayingUnpaidLedger() throws Exception {
-		User customer = saveUser("shipping-cancel-customer", "ROLE_USER");
+		User customer = saveUser("shipping-cancel-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("shipping-cancel-vendor", "ROLE_VENDOR");
 		User admin = saveUser("shipping-cancel-admin", "ROLE_ADMIN");
 		Product product = saveProduct("Shipping Snapshot Product", new BigDecimal("1200.00"), 4, vendor);
@@ -1369,7 +1369,7 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void onlyPaidNonCancelledLedgerEntriesCanBePaidOut() throws Exception {
-		User customer = saveUser("payout-eligibility-customer", "ROLE_USER");
+		User customer = saveUser("payout-eligibility-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("payout-eligibility-vendor", "ROLE_VENDOR");
 		User admin = saveUser("payout-eligibility-admin", "ROLE_ADMIN");
 		Product product = saveProduct("Payout Eligibility Product", new BigDecimal("400.00"), 5, vendor);
@@ -1398,7 +1398,7 @@ class MarketplaceApplicationTests {
 	void adminsModerateProductsAndOnlyApprovedProductsAreCustomerAccessible() throws Exception {
 		User admin = saveUser("moderation-admin", "ROLE_ADMIN");
 		User vendor = saveUser("moderation-vendor", "ROLE_VENDOR");
-		User customer = saveUser("moderation-customer", "ROLE_USER");
+		User customer = saveUser("moderation-customer", "ROLE_CUSTOMER");
 		String adminToken = login(admin.getUsername(), "test-password");
 		String vendorToken = login(vendor.getUsername(), "test-password");
 		String customerToken = login(customer.getUsername(), "test-password");
@@ -1486,7 +1486,7 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void checkoutRejectsAProductThatBecomesUnapprovedAfterItIsAddedToCart() throws Exception {
-		User customer = saveUser("moderation-checkout-customer", "ROLE_USER");
+		User customer = saveUser("moderation-checkout-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("moderation-checkout-vendor", "ROLE_VENDOR");
 		Product product = saveProduct("Checkout Moderation Product", new BigDecimal("20.00"), 3, vendor);
 		String customerToken = login(customer.getUsername(), "test-password");
@@ -1515,7 +1515,7 @@ class MarketplaceApplicationTests {
 	@Test
 	void moderationActionsRejectCustomerAndUnauthenticatedRequests() throws Exception {
 		User admin = saveUser("moderation-auth-admin", "ROLE_ADMIN");
-		User customer = saveUser("moderation-auth-customer", "ROLE_USER");
+		User customer = saveUser("moderation-auth-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("moderation-auth-vendor", "ROLE_VENDOR");
 		Product pending = saveProduct("Moderation Auth Pending", new BigDecimal("15.00"), 2, vendor);
 		pending.setModerationStatus(ProductModerationStatus.PENDING_REVIEW);
@@ -1579,7 +1579,7 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void everyUnapprovedModerationStatusIsHiddenAndCannotBePurchased() throws Exception {
-		User customer = saveUser("moderation-visibility-customer", "ROLE_USER");
+		User customer = saveUser("moderation-visibility-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("moderation-visibility-vendor", "ROLE_VENDOR");
 		String customerToken = login(customer.getUsername(), "test-password");
 		List<Product> unavailableProducts = List.of(
@@ -1644,7 +1644,7 @@ class MarketplaceApplicationTests {
 
 	@Test
 	void cartAndWishlistHideProductsThatBecomeUnavailableButStillAllowRemoval() throws Exception {
-		User customer = saveUser("moderation-saved-items-customer", "ROLE_USER");
+		User customer = saveUser("moderation-saved-items-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("moderation-saved-items-vendor", "ROLE_VENDOR");
 		Product cartProduct = saveProduct("Hidden Cart Product", new BigDecimal("29.99"), 4, vendor);
 		Product wishlistProduct = saveProduct("Hidden Wishlist Product", new BigDecimal("39.99"), 5, vendor);
@@ -1679,7 +1679,7 @@ class MarketplaceApplicationTests {
 	@Test
 	void suspensionDoesNotBreakHistoricalOrdersPaymentsRestockingOrStoredReviews() throws Exception {
 		User admin = saveUser("moderation-history-admin", "ROLE_ADMIN");
-		User customer = saveUser("moderation-history-customer", "ROLE_USER");
+		User customer = saveUser("moderation-history-customer", "ROLE_CUSTOMER");
 		User vendor = saveUser("moderation-history-vendor", "ROLE_VENDOR");
 		Product product = saveProduct("Moderation History Product", new BigDecimal("31.00"), 2, vendor);
 		String adminToken = login(admin.getUsername(), "test-password");

@@ -21,8 +21,8 @@ import {
   OrderDetailPage,
 } from '../pages/Pages'
 
-const customerRoles = ['ROLE_USER', 'ROLE_CUSTOMER', 'ROLE_VENDOR']
-const marketplaceRoles = [...customerRoles, 'ROLE_VENDOR']
+const customerRoles = ['ROLE_CUSTOMER', 'ROLE_VENDOR']
+const marketplaceRoles = customerRoles
 
 export const router = createBrowserRouter([
   {

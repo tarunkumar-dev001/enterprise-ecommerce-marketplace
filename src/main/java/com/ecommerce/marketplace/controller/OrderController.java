@@ -39,13 +39,13 @@ public class OrderController {
     }
 
     @PostMapping("/orders")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<OrderResponse> placeOrder(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(orderService.placeOrder(userDetails.getUsername()));
     }
 
     @PostMapping("/orders/checkout")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<OrderResponse> checkout(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody CheckoutRequest request) {
@@ -53,13 +53,13 @@ public class OrderController {
     }
 
     @GetMapping("/orders")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<List<OrderResponse>> getOrders(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(orderService.getCustomerOrders(userDetails.getUsername()));
     }
 
     @GetMapping("/orders/{id}")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<OrderResponse> getOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id) {
@@ -67,7 +67,7 @@ public class OrderController {
     }
 
     @PostMapping("/orders/{id}/cancel")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<OrderResponse> cancelOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id) {
@@ -75,7 +75,7 @@ public class OrderController {
     }
 
     @PostMapping("/orders/{id}/payments")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<PaymentResponse> processPayment(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id,
@@ -84,7 +84,7 @@ public class OrderController {
     }
 
     @GetMapping("/orders/{id}/invoice")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<byte[]> downloadInvoice(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id) {

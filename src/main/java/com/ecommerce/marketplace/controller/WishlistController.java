@@ -28,13 +28,13 @@ public class WishlistController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<WishlistResponse> getWishlist(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(wishlistService.getWishlist(userDetails.getUsername()));
     }
 
     @PostMapping("/items")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<WishlistResponse> addItem(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody WishlistItemRequest request) {
@@ -42,7 +42,7 @@ public class WishlistController {
     }
 
     @DeleteMapping("/items/{productId}")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<WishlistResponse> removeItem(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long productId) {
@@ -50,7 +50,7 @@ public class WishlistController {
     }
 
     @PostMapping("/items/{productId}/move-to-cart")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<CartResponse> moveItemToCart(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long productId) {

@@ -28,7 +28,7 @@ public class ProductReviewController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<ProductReviewResponse> createReview(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long productId,

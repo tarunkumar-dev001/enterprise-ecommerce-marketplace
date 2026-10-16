@@ -44,7 +44,7 @@ public class AuthService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        String role = "VENDOR".equals(request.getAccountType()) ? "ROLE_VENDOR" : "ROLE_USER";
+        String role = "VENDOR".equals(request.getAccountType()) ? "ROLE_VENDOR" : "ROLE_CUSTOMER";
         user.setRoles(Set.of(role));
         userRepository.save(user);
 

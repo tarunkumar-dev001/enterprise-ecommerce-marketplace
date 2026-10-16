@@ -33,7 +33,7 @@ public class ProductController {
     }
 
     @GetMapping("/products")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<ProductPageResponse> listProducts(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String category,
@@ -48,7 +48,7 @@ public class ProductController {
     }
 
     @GetMapping("/products/{id}")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<ProductDetailsResponse> getProductDetails(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductDetails(id));
     }

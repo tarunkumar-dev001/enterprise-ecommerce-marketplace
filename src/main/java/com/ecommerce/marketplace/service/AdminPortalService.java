@@ -80,7 +80,7 @@ public class AdminPortalService {
         List<ProductReviewResponse> recentReviews = allReviews.stream().sorted(Comparator.comparing(ProductReview::getCreatedAt).reversed()).limit(5).map(ProductReviewResponse::from).toList();
         List<AdminVendorResponse> vendors = vendors();
         long vendorCount = allUsers.stream().filter(user -> user.getRoles().contains("ROLE_VENDOR")).count();
-        long customerCount = allUsers.stream().filter(user -> user.getRoles().contains("ROLE_USER") || user.getRoles().contains("ROLE_CUSTOMER")).count();
+        long customerCount = allUsers.stream().filter(user -> user.getRoles().contains("ROLE_CUSTOMER")).count();
         return new AdminDashboardResponse(allUsers.size(), vendorCount, customerCount, allProducts.size(), allOrders.size(),
                 allOrders.stream().filter(order -> order.getPaymentStatus() == PaymentStatus.PAID)
                         .map(Order::getTotalAmount).filter(Objects::nonNull).reduce(ZERO, BigDecimal::add),

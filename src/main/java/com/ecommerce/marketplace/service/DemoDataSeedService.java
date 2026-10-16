@@ -122,11 +122,11 @@ public class DemoDataSeedService {
         users.put("technova", user("TechNova Store", "technova@marketplace.demo", "ROLE_VENDOR"));
         users.put("urbanstyle", user("UrbanStyle", "urbanstyle@marketplace.demo", "ROLE_VENDOR"));
         users.put("homenest", user("HomeNest", "homenest@marketplace.demo", "ROLE_VENDOR"));
-        users.put("rahul", user("rahul", CUSTOMER_EMAILS.get(0), "ROLE_USER"));
-        users.put("priya", user("priya", CUSTOMER_EMAILS.get(1), "ROLE_USER"));
-        users.put("ananya", user("ananya", CUSTOMER_EMAILS.get(2), "ROLE_USER"));
-        users.put("rohan", user("rohan", CUSTOMER_EMAILS.get(3), "ROLE_USER"));
-        users.put("sneha", user("sneha", CUSTOMER_EMAILS.get(4), "ROLE_USER"));
+        users.put("rahul", user("rahul", CUSTOMER_EMAILS.get(0), "ROLE_CUSTOMER"));
+        users.put("priya", user("priya", CUSTOMER_EMAILS.get(1), "ROLE_CUSTOMER"));
+        users.put("ananya", user("ananya", CUSTOMER_EMAILS.get(2), "ROLE_CUSTOMER"));
+        users.put("rohan", user("rohan", CUSTOMER_EMAILS.get(3), "ROLE_CUSTOMER"));
+        users.put("sneha", user("sneha", CUSTOMER_EMAILS.get(4), "ROLE_CUSTOMER"));
 
         List<User> vendors = List.of(users.get("technova"), users.get("urbanstyle"), users.get("homenest"));
         List<Product> products = seedProducts(vendors);

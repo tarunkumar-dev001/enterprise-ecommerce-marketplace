@@ -1,6 +1,5 @@
--- Adds moderation to an existing MySQL products table without rewriting data.
--- New columns are nullable during the backfill so pre-moderation listings retain
--- their trusted, purchasable status; future inserts default to PENDING_REVIEW.
+-- Retained for upgrades from schemas created before the baseline migration.
+-- Fresh installations receive these columns in V1__init.sql.
 SET @marketplace_schema := DATABASE();
 
 SET @add_status_sql := (

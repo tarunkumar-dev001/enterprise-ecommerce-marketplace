@@ -23,7 +23,7 @@ export function ProductsPage() {
   const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const { showToast } = useToast()
-  const canWishlist = Boolean(user?.roles.some((role) => role === 'ROLE_USER' || role === 'ROLE_CUSTOMER' || role === 'ROLE_VENDOR'))
+  const canWishlist = Boolean(user?.roles.some((role) => role === 'ROLE_CUSTOMER' || role === 'ROLE_VENDOR'))
   const [searchDraft, setSearchDraft] = useState('')
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<Filters>(() => ({ ...emptyFilters, category: searchParams.get('category') ?? '' }))

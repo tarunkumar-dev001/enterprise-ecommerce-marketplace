@@ -38,7 +38,7 @@ export function ReviewSection({
   const [rating, setRating] = useState(0)
   const [text, setText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const canReview = Boolean(user?.roles.some((role) => role === 'ROLE_USER' || role === 'ROLE_CUSTOMER' || role === 'ROLE_VENDOR'))
+  const canReview = Boolean(user?.roles.some((role) => role === 'ROLE_CUSTOMER' || role === 'ROLE_VENDOR'))
   const hasReviewed = Boolean(user && reviews.some((review) => review.customerId === user.id))
 
   async function submitReview(event: FormEvent<HTMLFormElement>) {

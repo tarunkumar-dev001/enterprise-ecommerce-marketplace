@@ -63,7 +63,7 @@ class DemoDataSeedServiceTest {
         realUser.setUsername("unrelated-real-user");
         realUser.setEmail("unrelated-real-user@example.test");
         realUser.setPassword(passwordEncoder.encode("Unchanged@123"));
-        realUser.setRoles(Set.of("ROLE_USER"));
+        realUser.setRoles(Set.of("ROLE_CUSTOMER"));
         userRepository.saveAndFlush(realUser);
         Map<String, Set<String>> rolesBefore = userRepository.findAll().stream()
                 .collect(Collectors.toMap(User::getUsername, user -> Set.copyOf(user.getRoles())));
@@ -102,7 +102,7 @@ class DemoDataSeedServiceTest {
                 .allMatch(product -> product.getImageUrl().startsWith("/assets/products/")));
         assertEquals(3, userRepository.findAll().stream().filter(user -> user.getRoles().contains("ROLE_VENDOR")).count());
         assertEquals(5, userRepository.findAll().stream()
-                .filter(user -> user.getEmail().endsWith("@marketplace.demo") && user.getRoles().contains("ROLE_USER"))
+                .filter(user -> user.getEmail().endsWith("@marketplace.demo") && user.getRoles().contains("ROLE_CUSTOMER"))
                 .count());
         assertTrue(userRepository.findByEmail("admin@marketplace.demo").orElseThrow()
                 .getRoles().contains("ROLE_ADMIN"));
@@ -175,7 +175,7 @@ class DemoDataSeedServiceTest {
                 .andExpect(jsonPath("$.user.roles").isNotEmpty());
         User unchangedRealUser = userRepository.findByEmail("unrelated-real-user@example.test").orElseThrow();
         assertTrue(passwordEncoder.matches("Unchanged@123", unchangedRealUser.getPassword()));
-        assertEquals(Set.of("ROLE_USER"), unchangedRealUser.getRoles());
+        assertEquals(Set.of("ROLE_CUSTOMER"), unchangedRealUser.getRoles());
         for (Product product : productRepository.findByVendorOrderByIdDesc(vendor)) {
             assertTrue(product.getStock() >= 0);
         }

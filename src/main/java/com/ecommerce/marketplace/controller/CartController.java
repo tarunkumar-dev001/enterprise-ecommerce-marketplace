@@ -30,13 +30,13 @@ public class CartController {
     }
 
     @GetMapping("/cart")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<CartResponse> getCart(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(cartService.getCart(userDetails.getUsername()));
     }
 
     @PostMapping("/cart/items")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<CartResponse> addItemToCart(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody CartItemRequest request) {
@@ -44,7 +44,7 @@ public class CartController {
     }
 
     @PostMapping("/cart/coupon")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<CartResponse> applyCoupon(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody ApplyCouponRequest request) {
@@ -52,7 +52,7 @@ public class CartController {
     }
 
     @PutMapping("/cart/items/{productId}")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<CartResponse> updateItemQuantity(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long productId,
@@ -61,7 +61,7 @@ public class CartController {
     }
 
     @DeleteMapping("/cart/items/{productId}")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<CartResponse> removeItem(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long productId) {
@@ -69,7 +69,7 @@ public class CartController {
     }
 
     @DeleteMapping("/cart/coupon")
-    @PreAuthorize("hasAnyRole('USER','CUSTOMER','VENDOR')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','VENDOR')")
     public ResponseEntity<CartResponse> removeCoupon(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(cartService.removeCoupon(userDetails.getUsername()));
     }

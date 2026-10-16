@@ -27,7 +27,7 @@ export function ProductDetailPage() {
   const reviews = currentResult?.reviews ?? []
   const error = currentResult?.error ?? ''
   const isLoading = !invalidProductId && currentResult === null
-  const canAddToCart = Boolean(user?.roles.some((role) => role === 'ROLE_USER' || role === 'ROLE_CUSTOMER' || role === 'ROLE_VENDOR'))
+  const canAddToCart = Boolean(user?.roles.some((role) => role === 'ROLE_CUSTOMER' || role === 'ROLE_VENDOR'))
 
   useEffect(() => {
     let active = true
