@@ -42,6 +42,12 @@ export const adminApi = {
 export const authApi = {
   async login(username: string, password: string) {
     const { data } = await apiClient.post<LoginResponse>('/auth/login', { username, password })
+
+    // Defensive check: Ensure backend returned a valid JSON object with token & user
+    if (!data || typeof data !== 'object' || !data.token || !data.user) {
+      throw new Error('Invalid authentication payload received from the server.')
+    }
+
     window.localStorage.setItem(AUTH_TOKEN_KEY, data.token)
     return data
   },
